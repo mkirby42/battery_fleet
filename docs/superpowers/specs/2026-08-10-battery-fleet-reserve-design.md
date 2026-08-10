@@ -87,7 +87,7 @@ Each site: capacity (kWh), max charge/discharge (kW), SOC, simple constant effic
 
 Each 15s tick: apply policy setpoint → clamp by power, SOC, and reserve rules → update SOC → if islanded, serve load or record shortfall (kWh).
 
-Sign convention: **discharge to grid or home is positive power (kW)**; charging from grid is negative. SOC is fraction in `[0, 1]` or kWh — pick one at implementation and keep it consistent at boundaries (prefer kWh in the engine, percent only in scenario knobs / UI).
+Sign convention: **discharge to grid or home is positive power (kW)**; charging from grid is negative. Engine state uses **energy_kWh** (and capacity_kWh); scenario knobs / UI may use SOC percent, converted at the boundary.
 
 When islanded: no market import/export; battery serves home load only (subject to power/SOC). Market setpoints apply only while grid-connected.
 
