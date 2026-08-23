@@ -18,6 +18,12 @@ def test_city_outage_hits_nested_substation():
     assert location_islanded(LOC, [out], 5, [SUB], [CITY], [REG]) is True
 
 
+def test_region_outage_hits_nested_location():
+    out = Outage(0, 10, "region", "r1")
+    assert location_islanded(LOC, [out], 5, [SUB], [CITY], [REG]) is True
+    assert location_islanded(LOC, [out], 10, [SUB], [CITY], [REG]) is False
+
+
 def test_other_substation_misses():
     out = Outage(0, 10, "substation", "other")
     assert location_islanded(LOC, [out], 5, [SUB], [CITY], [REG]) is False
