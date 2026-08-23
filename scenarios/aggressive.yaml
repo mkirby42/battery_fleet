@@ -1,0 +1,19 @@
+seed: 7
+duration_s: 86400
+n_locations: 60
+local_policy: {kind: aggressive, floor_frac: 0.0}
+hq_policy: {charge_below: 25, discharge_above: 80}
+battery: {efficiency: 0.95}
+market_event:
+  kind: hot_evening_scarcity
+  settlement_point: HB_NORTH
+  scarcity_start_s: 64800
+  scarcity_end_s: 65400
+  scarcity_adder: 2500
+  congestion_start_s: 65000
+  congestion_end_s: 65600
+  congestion_adder: 80
+  base_energy: 32
+  losses: 1
+outages:
+  - {start_s: 64915, end_s: 66700, node_kind: substation, node_id: s0}

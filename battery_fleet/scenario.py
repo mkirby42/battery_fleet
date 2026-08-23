@@ -73,11 +73,12 @@ def _interp(start: float, end: float, i: int, n: int) -> float:
     return start + (end - start) * i / (n - 1)
 
 
-def _build_weather(duration_s: int) -> list[WeatherRow]:
+def _build_weather(duration_s: int, city_ids: list[str]) -> list[WeatherRow]:
     rows: list[WeatherRow] = []
     for t in range(0, duration_s, INTERVAL_S):
         temp_c = 18.0 + 12.0 * (t / duration_s)
-        rows.append(WeatherRow(t_s=t, city_id="c0", temp_c=temp_c))
+        for city_id in city_ids:
+            rows.append(WeatherRow(t_s=t, city_id=city_id, temp_c=temp_c))
     return rows
 
 
@@ -100,8 +101,23 @@ def load_scenario(path: Path | str) -> World:
     event_cfg = data["market_event"]
 
     regions = [Region(id="r0", name="r0")]
-    cities = [City(id="c0", name="c0", region_id="r0")]
-    substations = [Substation(id="s0", name="s0", city_id="c0")]
+
+    if n_locations > 3:
+        cities = [
+            City(id="c0", name="c0", region_id="r0"),
+            City(id="c1", name="c1", region_id="r0"),
+        ]
+        substations = [
+            Substation(id="s0", name="s0", city_id="c0"),
+            Substation(id="s1", name="s1", city_id="c0"),
+            Substation(id="s2", name="s2", city_id="c1"),
+            Substation(id="s3", name="s3", city_id="c1"),
+        ]
+        substation_city = {"s0": "c0", "s1": "c0", "s2": "c1", "s3": "c1"}
+    else:
+        cities = [City(id="c0", name="c0", region_id="r0")]
+        substations = [Substation(id="s0", name="s0", city_id="c0")]
+        substation_city = {"s0": "c0"}
 
     locations: list[Location] = []
     units: list[Unit] = []
@@ -113,12 +129,18 @@ def load_scenario(path: Path | str) -> World:
         unit_id = f"u{i}"
         lat = _interp(32.6, 33.0, i, n_locations)
         lon = _interp(-97.0, -96.6, i, n_locations)
-        locations.append(Location(id=loc_id, lat=lat, lon=lon, substation_id="s0"))
+        if n_locations > 3:
+            substation_id = f"s{i % 4}"
+        else:
+            substation_id = "s0"
+        locations.append(
+            Location(id=loc_id, lat=lat, lon=lon, substation_id=substation_id)
+        )
         units.append(
             Unit(id=unit_id, capacity_kwh=10.0, max_charge_kw=5.0, max_discharge_kw=5.0)
         )
         installs.append(Install(unit_id=unit_id, location_id=loc_id))
-        city_of[loc_id] = "c0"
+        city_of[loc_id] = substation_city[substation_id]
 
     local_policy = LocalPolicy(
         id="lp", kind=local_cfg["kind"], floor_frac=local_cfg["floor_frac"]
@@ -153,7 +175,7 @@ def load_scenario(path: Path | str) -> World:
         for o in data.get("outages", [])
     ]
 
-    weather = _build_weather(duration_s)
+    weather = _build_weather(duration_s, [c.id for c in cities])
     prices = write_prices(
         event,
         duration_s,
