@@ -126,12 +126,17 @@ def main() -> None:
     run_parser.add_argument("scenario", type=Path)
     run_parser.add_argument("--runs-dir", type=Path, default=Path("runs"))
 
-    sub.add_parser("serve")
+    serve_parser = sub.add_parser("serve")
+    serve_parser.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    serve_parser.add_argument("--port", type=int, default=8765)
+    serve_parser.add_argument("--host", type=str, default="127.0.0.1")
 
     args = parser.parse_args()
     if args.command == "run":
         run_dir = run_scenario(args.scenario, runs_dir=args.runs_dir)
         print(run_dir)
     elif args.command == "serve":
-        raise SystemExit("not yet")
+        from battery_fleet.serve import main as serve_main
+
+        serve_main(host=args.host, port=args.port, runs_dir=args.runs_dir)
 

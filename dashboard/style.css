@@ -1,0 +1,172 @@
+/* Battery Fleet dashboard — dark control room */
+
+:root {
+  --bg: #0c0f14;
+  --surface: #141a22;
+  --border: #243040;
+  --text: #c8d4e0;
+  --muted: #6b7d8f;
+  --accent: #3dd6c6;
+  --warn: #e85d4a;
+  --soc-low: #1a4a5c;
+  --soc-high: #3dd6c6;
+  --font: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.4;
+  min-height: 100vh;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.top-bar h1 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.run-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.run-picker select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  min-width: 220px;
+}
+
+.error-banner {
+  background: #2a1210;
+  border-bottom: 1px solid var(--warn);
+  color: #f0a090;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 10px 20px;
+}
+
+.error-banner.hidden { display: none; }
+
+.metrics {
+  display: flex;
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.metric {
+  flex: 1;
+  background: var(--surface);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.metric .value {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  min-height: calc(100vh - 120px);
+}
+
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--bg);
+  padding: 16px 20px 20px;
+}
+
+.panel h2 {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.panel h2 small {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--border);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.map-panel canvas { aspect-ratio: 16 / 9; }
+
+.scrubber {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.scrubber input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 4px;
+}
+
+#time-label {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 48px;
+  text-align: right;
+}
+
+.charts-panel canvas { margin-bottom: 16px; }
+
+.charts-panel canvas:last-child { margin-bottom: 0; }

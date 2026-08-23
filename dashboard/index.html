@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Battery Fleet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top-bar">
+    <h1>Battery Fleet</h1>
+    <label class="run-picker">
+      Run
+      <select id="run-select"><option value="">Loading…</option></select>
+    </label>
+  </header>
+
+  <div id="error-banner" class="error-banner hidden"></div>
+
+  <section class="metrics" id="metrics">
+    <div class="metric"><span class="label">Revenue</span><span class="value" id="m-revenue">—</span></div>
+    <div class="metric"><span class="label">Shortfall</span><span class="value" id="m-shortfall">—</span></div>
+    <div class="metric"><span class="label">Coverage</span><span class="value" id="m-coverage">—</span></div>
+    <div class="metric"><span class="label">Locations dark</span><span class="value" id="m-dark">—</span></div>
+    <div class="metric"><span class="label">Time at floor</span><span class="value" id="m-floor">—</span></div>
+  </section>
+
+  <main class="grid">
+    <section class="panel map-panel">
+      <h2>Fleet map</h2>
+      <canvas id="map-canvas" width="800" height="420"></canvas>
+      <div class="scrubber">
+        <input type="range" id="time-slider" min="0" max="3600" value="0" step="15">
+        <span id="time-label">0:00</span>
+      </div>
+    </section>
+
+    <section class="panel charts-panel">
+      <h2>SPP <small id="spp-legend"></small></h2>
+      <canvas id="chart-spp" width="800" height="140"></canvas>
+      <h2>Fleet mean SOC</h2>
+      <canvas id="chart-soc" width="800" height="120"></canvas>
+      <h2>Shortfall</h2>
+      <canvas id="chart-shortfall" width="800" height="120"></canvas>
+    </section>
+  </main>
+
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
