@@ -6,7 +6,7 @@ hq_policy: {charge_below: 25, discharge_above: 80}
 battery: {efficiency: 1.0}
 market_event:
   kind: hot_evening_scarcity
-  settlement_point: HB_NORTH
+  settlement_point: HB_SOUTH
   scarcity_start_s: 900
   scarcity_end_s: 1200
   scarcity_adder: 1500

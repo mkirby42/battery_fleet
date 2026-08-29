@@ -131,6 +131,8 @@ def main() -> None:
     serve_parser.add_argument("--port", type=int, default=8765)
     serve_parser.add_argument("--host", type=str, default="127.0.0.1")
 
+    sub.add_parser("diagram")
+
     args = parser.parse_args()
     if args.command == "run":
         run_dir = run_scenario(args.scenario, runs_dir=args.runs_dir)
@@ -139,4 +141,8 @@ def main() -> None:
         from battery_fleet.serve import main as serve_main
 
         serve_main(host=args.host, port=args.port, runs_dir=args.runs_dir)
+    elif args.command == "diagram":
+        from battery_fleet.diagram import write_markdown
+
+        print(write_markdown())
 

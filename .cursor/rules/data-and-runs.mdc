@@ -1,0 +1,14 @@
+---
+description: Types are law. Do not invent runs or edit the index.
+alwaysApply: true
+---
+
+# Data and runs
+
+- Types in `battery_fleet/` are the law. No column the types don’t know.
+- A run is a folder with `run.db`. The card lives in that database.
+- Start a run only with `python -m battery_fleet run scenarios/…`. Do not `mkdir` a run. Do not edit `runs/index.json`. The index is a scan.
+- Location ≠ unit. Load and island sit on the location. Ticks sit on the unit.
+- Local policy always runs. HQ is a privilege when the location is linked. No last-HQ-setpoint.
+- Do not bake “only one run,” “always online,” or “home = battery.”
+- If a file in this package goes over ~250 lines, split it.

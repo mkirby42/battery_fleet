@@ -3,13 +3,19 @@ import sqlite3
 from pathlib import Path
 
 
+def default_runs_dir() -> Path:
+    return Path(__file__).resolve().parent.parent / "runs"
+
+
 def rebuild_index(runs_dir: Path) -> list[dict]:
     runs_dir = Path(runs_dir)
     entries: list[dict] = []
     for db_path in sorted(runs_dir.glob("*/run.db")):
         con = sqlite3.connect(db_path)
         row = con.execute(
-            "SELECT id, status, seed, error, local_policy_id, hq_policy_id, market_event_id FROM run"
+            "SELECT r.id, r.status, r.seed, r.error, r.local_policy_id, "
+            "r.hq_policy_id, r.market_event_id, lp.kind "
+            "FROM run r JOIN local_policy lp ON lp.id = r.local_policy_id"
         ).fetchone()
         con.close()
         if row is None:
@@ -23,6 +29,7 @@ def rebuild_index(runs_dir: Path) -> list[dict]:
                 "local_policy_id": row[4],
                 "hq_policy_id": row[5],
                 "market_event_id": row[6],
+                "local_policy_kind": row[7],
             }
         )
     index_path = runs_dir / "index.json"
@@ -32,6 +39,8 @@ def rebuild_index(runs_dir: Path) -> list[dict]:
 
 def load_index(runs_dir: Path) -> list[dict]:
     runs_dir = Path(runs_dir)
+    if not runs_dir.exists():
+        return []
     index_path = runs_dir / "index.json"
     if not index_path.exists():
         rebuild_index(runs_dir)

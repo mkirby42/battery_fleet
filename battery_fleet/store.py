@@ -80,7 +80,7 @@ def write_world(path: Path, world: World) -> None:
         )
     con.execute(
         "INSERT INTO load_model (id, formula) VALUES (?, ?)",
-        ("lm", "tod+ac"),
+        ("lm", "scale*(tod+hvac)"),
     )
     for row in world.loads:
         con.execute(

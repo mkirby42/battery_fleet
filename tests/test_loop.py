@@ -1,4 +1,8 @@
-from battery_fleet.loop import step_unit
+from dataclasses import replace
+from pathlib import Path
+
+from battery_fleet.loop import simulate, step_unit
+from battery_fleet.scenario import load_scenario
 from battery_fleet.types import (
     BatteryModel, HqPolicy, LocalPolicy, Location, Tick, Unit,
 )
@@ -46,3 +50,12 @@ def test_silent_reverts_to_local_hold():
     assert tick.who_decided == "local"
     assert tick.hq_asked_kw is None
     assert tick.power_kw == 0.0  # no last-setpoint
+
+
+def test_simulate_seeds_start_soc_frac():
+    tiny = Path(__file__).resolve().parents[1] / "scenarios" / "tiny.yaml"
+    world = replace(load_scenario(tiny), start_soc_frac=0.25)
+    ticks, _, _ = simulate(world)
+    first = [t for t in ticks if t.t_s == 0]
+    assert first
+    assert all(abs(t.energy_kwh - 2.5) < 1e-9 for t in first)

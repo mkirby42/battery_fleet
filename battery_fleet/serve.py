@@ -12,7 +12,8 @@ TICK_STRIDE_THRESHOLD = 200_000
 
 
 def runs_payload(runs_dir: Path | str) -> list[dict]:
-    return [r for r in load_index(Path(runs_dir)) if r["status"] == "success"]
+    rows = [r for r in load_index(Path(runs_dir)) if r["status"] == "success"]
+    return sorted(rows, key=lambda r: r["id"], reverse=True)
 
 
 def _rows_to_dicts(cursor: sqlite3.Cursor, rows: list) -> list[dict]:
@@ -22,16 +23,32 @@ def _rows_to_dicts(cursor: sqlite3.Cursor, rows: list) -> list[dict]:
 
 def _read_card(con: sqlite3.Connection) -> dict:
     row = con.execute(
-        "SELECT id, seed, schema_version, status, error, local_policy_id, "
-        "hq_policy_id, market_event_id, started_s, finished_s FROM run"
+        "SELECT r.id, r.seed, r.schema_version, r.status, r.error, r.local_policy_id, "
+        "r.hq_policy_id, r.market_event_id, r.started_s, r.finished_s, lp.kind "
+        "FROM run r JOIN local_policy lp ON lp.id = r.local_policy_id"
     ).fetchone()
     if row is None:
         raise ValueError("run card missing")
     cols = [
         "id", "seed", "schema_version", "status", "error", "local_policy_id",
         "hq_policy_id", "market_event_id", "started_s", "finished_s",
+        "local_policy_kind",
     ]
     return dict(zip(cols, row))
+
+
+def _stride_ticks(rows: list, threshold: int = TICK_STRIDE_THRESHOLD) -> tuple[list, int]:
+    if len(rows) <= threshold:
+        return rows, 1
+    stride = 4
+    times: list = []
+    prev = object()
+    for r in rows:
+        if r[0] != prev:
+            times.append(r[0])
+            prev = r[0]
+    keep = set(times[::stride])
+    return [r for r in rows if r[0] in keep], stride
 
 
 def _read_ticks(con: sqlite3.Connection) -> tuple[list[dict], int]:
@@ -40,11 +57,7 @@ def _read_ticks(con: sqlite3.Connection) -> tuple[list[dict], int]:
         "t.islanded, t.link_up, u.capacity_kwh "
         "FROM ticks t JOIN units u ON t.unit_id = u.id ORDER BY t.t_s, t.unit_id"
     )
-    rows = cur.fetchall()
-    stride = 1
-    if len(rows) > TICK_STRIDE_THRESHOLD:
-        rows = rows[::4]
-        stride = 4
+    rows, stride = _stride_ticks(cur.fetchall())
     ticks = [
         {
             "t_s": r[0],
@@ -91,6 +104,11 @@ def run_payload(runs_dir: Path | str, run_id: str) -> dict:
         prices = _rows_to_dicts(cur, cur.fetchall())
 
         cur = con.execute(
+            "SELECT location_id, t_s, kw FROM loads ORDER BY location_id, t_s"
+        )
+        loads = _rows_to_dicts(cur, cur.fetchall())
+
+        cur = con.execute(
             "SELECT start_s, end_s, node_kind, node_id FROM outages ORDER BY start_s"
         )
         outages = _rows_to_dicts(cur, cur.fetchall())
@@ -128,7 +146,9 @@ def run_payload(runs_dir: Path | str, run_id: str) -> dict:
             "installs": installs,
             "ticks": ticks,
             "trace_stride": trace_stride,
+            "last_tick_s": max((t["t_s"] for t in ticks), default=None),
             "prices": prices,
+            "loads": loads,
             "outages": outages,
             "events": events,
             "intervals": intervals,

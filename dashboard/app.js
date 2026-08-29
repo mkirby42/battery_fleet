@@ -8,20 +8,47 @@ let shortfallSeries = [];
 const $ = (id) => document.getElementById(id);
 
 function fmtTime(s) {
-  const m = Math.floor(s / 60);
-  return `${m}:${String(s % 60).padStart(2, "0")}`;
+  const t = Math.max(0, Math.round(+s || 0));
+  const day = Math.floor(t / 86400);
+  const tod = t % 86400;
+  const h = Math.floor(tod / 3600);
+  const m = Math.floor((tod % 3600) / 60);
+  const sec = tod % 60;
+  const hm = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const clock = sec ? `${hm}:${String(sec).padStart(2, "0")}` : hm;
+  return day ? `d${day + 1} ${clock}` : clock;
 }
 
 function showError(msg) {
+  hideLoading();
   $("error-banner").textContent = msg;
   $("error-banner").classList.remove("hidden");
 }
 
 function hideError() { $("error-banner").classList.add("hidden"); }
 
+function showLoading() {
+  hideError();
+  $("loading-banner").classList.remove("hidden");
+}
+
+function hideLoading() { $("loading-banner").classList.add("hidden"); }
+
 function socColor(ratio) {
   const t = Math.max(0, Math.min(1, ratio));
   return `rgb(${26 + t * 35 | 0},${74 + t * 140 | 0},${92 + t * 106 | 0})`;
+}
+
+function runLabel(r) {
+  const kind = r.local_policy_kind || r.local_policy_id || "?";
+  return `${r.id} · ${kind} · seed ${r.seed}`;
+}
+
+function lastTickS(body) {
+  if (body.last_tick_s != null) return body.last_tick_s;
+  let max = 0;
+  for (const t of body.ticks || []) if (t.t_s > max) max = t.t_s;
+  return max;
 }
 
 function buildSeries() {
@@ -49,80 +76,51 @@ function setMetrics(sb) {
   $("m-floor").textContent = sb ? fmtTime(sb.time_at_floor_s) : "—";
 }
 
-function drawMap(tNow) {
-  const c = $("map-canvas");
-  const ctx = c.getContext("2d");
-  const w = c.width, h = c.height, pad = 40;
-  ctx.fillStyle = "#141a22";
-  ctx.fillRect(0, 0, w, h);
-
-  const locs = data.locations;
-  const inst = Object.fromEntries(data.installs.map((i) => [i.location_id, i.unit_id]));
-  const tickOf = Object.fromEntries((ticksByTime.get(tNow) || []).map((t) => [t.unit_id, t]));
-  const lats = locs.map((l) => l.lat), lons = locs.map((l) => l.lon);
-  const latMin = Math.min(...lats) - 0.05, latMax = Math.max(...lats) + 0.05;
-  const lonMin = Math.min(...lons) - 0.05, lonMax = Math.max(...lons) + 0.05;
-  const px = (lon) => pad + ((lon - lonMin) / (lonMax - lonMin)) * (w - 2 * pad);
-  const py = (lat) => h - pad - ((lat - latMin) / (latMax - latMin)) * (h - 2 * pad);
-
-  ctx.strokeStyle = "#243040";
-  for (let i = 0; i <= 4; i++) {
-    const y = pad + (i / 4) * (h - 2 * pad);
-    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke();
-  }
-
-  for (const loc of locs) {
-    const tick = tickOf[inst[loc.id]];
-    const x = px(loc.lon), y = py(loc.lat), r = 10;
-    if (tick?.islanded) {
-      ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = "#e85d4a"; ctx.lineWidth = 2; ctx.stroke();
-    }
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = socColor(tick ? tick.energy_kwh / tick.capacity_kwh : 0);
-    ctx.fill();
-    ctx.strokeStyle = "#0c0f14"; ctx.lineWidth = 1.5; ctx.stroke();
-  }
-  ctx.fillStyle = "#6b7d8f";
-  ctx.font = "11px IBM Plex Mono";
-  ctx.fillText(`${locs.length} locations · t=${fmtTime(tNow)}`, pad, 18);
-}
-
 function drawCharts(tNow) {
   const spp = data.prices.map((p) => ({
     t_s: p.t_s, v: p.energy + p.scarcity + p.congestion + p.losses,
   }));
-  drawLineChart("chart-spp", spp, "#3dd6c6", (v) => `$${v.toFixed(0)}`, true, data.prices, tNow);
-  drawLineChart("chart-soc", socSeries, "#6b8fd4", (v) => `${(v * 100).toFixed(0)}%`, false, [], tNow);
-  drawLineChart("chart-shortfall", shortfallSeries, "#e85d4a", (v) => v.toFixed(3), false, [], tNow);
+  drawLineChart("chart-spp", spp, "#3dd6c6", (v) => `$${v.toFixed(0)}`, true, data.prices, tNow, data.outages || []);
+  drawLineChart("chart-soc", socSeries, "#6b8fd4", (v) => `${(v * 100).toFixed(0)}%`, false, [], tNow, []);
+  drawLineChart("chart-shortfall", shortfallSeries, "#e85d4a", (v) => v.toFixed(3), false, [], tNow, []);
   $("spp-legend").textContent = "energy · scarcity · congestion · losses";
 }
 
 function onScrub() {
   const t = +$("time-slider").value;
   $("time-label").textContent = fmtTime(t);
-  if (data) { drawMap(t); drawCharts(t); }
+  if (data) { updateFleetMap(t); drawCharts(t); }
 }
 
 async function loadRun(id) {
-  hideError();
-  const res = await fetch(`/api/runs/${id}`);
-  const body = await res.json();
-  if (!res.ok) { showError(body.error || `Failed to load run ${id}`); data = null; return; }
-  if (body.card?.status !== "success") {
-    showError(body.card?.error || `Run ${id} did not succeed`);
+  showLoading();
+  try {
+    const res = await fetch(`/api/runs/${id}`);
+    const body = await res.json();
+    if (!res.ok) { data = null; showError(body.error || `Failed to load run ${id}`); return; }
+    if (body.card?.status !== "success") {
+      data = null;
+      showError(body.card?.error || `Run ${id} did not succeed`);
+      return;
+    }
+    data = body;
+    indexLoads();
+    const opt = [...$("run-select").options].find((o) => o.value === id);
+    if (opt) opt.textContent = runLabel({ id, seed: body.card.seed, ...body.card });
+    buildSeries();
+    setMetrics(body.scoreboard);
+    const slider = $("time-slider");
+    slider.max = lastTickS(body);
+    slider.value = 0;
+    slider.step = (body.trace_stride || 1) * 15;
+    setPlaying(false);
+    fitFleet();
+    onScrub();
+    hideLoading();
+  } catch (e) {
     data = null;
-    return;
+    showError(String(e));
   }
-  data = body;
-  buildSeries();
-  setMetrics(body.scoreboard);
-  const dur = body.card.finished_s || (body.prices.at(-1)?.t_s ?? 0) + 300 || 3600;
-  const slider = $("time-slider");
-  slider.max = dur;
-  slider.value = 0;
-  slider.step = (body.trace_stride || 1) * 15;
-  onScrub();
 }
 
 async function init() {
@@ -141,7 +139,7 @@ async function init() {
     for (const r of runs) {
       const opt = document.createElement("option");
       opt.value = r.id;
-      opt.textContent = `${r.id}  (seed ${r.seed})`;
+      opt.textContent = runLabel(r);
       sel.appendChild(opt);
     }
     sel.addEventListener("change", () => loadRun(sel.value));
@@ -152,4 +150,14 @@ async function init() {
 }
 
 $("time-slider").addEventListener("input", onScrub);
+bindMapLegend();
+bindPlayback();
+window.addEventListener("resize", () => {
+  if (fleetMap) fleetMap.invalidateSize();
+  onScrub();
+});
+const ro = new ResizeObserver(() => { if (data) onScrub(); });
+for (const id of ["chart-spp", "chart-soc", "chart-shortfall"]) {
+  ro.observe($(id).parentElement);
+}
 init();

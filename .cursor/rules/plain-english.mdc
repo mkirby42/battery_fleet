@@ -1,0 +1,12 @@
+---
+description: Plain English. Short questions. No technobabble.
+alwaysApply: true
+---
+
+# Plain English
+
+Write so a person can follow it. Short sentences. Name the thing (location, unit, run), not the abstraction.
+
+- Ask one simple question at a time when something is unclear.
+- Prefer the author’s words in quotes over a cleaned-up paraphrase.
+- Do not produce masses of docs nobody will read. Spec, intent log, later.md, project log, types — that’s the set.
