@@ -1,0 +1,10 @@
+---
+description: Keep the daily project log after work that ran or decided something
+alwaysApply: true
+---
+
+# Project log
+
+After a session that ran a sim, pushed, or locked a decision, write or append `docs/project-log/YYYY-MM-DD.md`.
+
+Plain English. What happened, what broke, what you learned. Not a changelog of files. How to write an entry: skill `project-log`.

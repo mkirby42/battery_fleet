@@ -1,0 +1,92 @@
+:root {
+  --ink: #0b0a09;
+  --ink-2: #141210;
+  --copper: #c47b3a;
+  --teal: #3ecfc1;
+  --fault: #e85d4c;
+  --paper: #ddd4c6;
+  --muted: #7d756c;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+html {
+  font-family: "IBM Plex Sans", sans-serif;
+}
+
+body {
+  height: 100%;
+  background:
+    radial-gradient(ellipse 90% 55% at 8% -10%, rgba(196, 123, 58, 0.07), transparent 52%),
+    radial-gradient(ellipse 70% 40% at 100% 110%, rgba(62, 207, 193, 0.04), transparent 50%),
+    var(--ink);
+}
+
+#root {
+  min-height: 100%;
+  height: 100%;
+}
+
+.shell {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.75rem 3.25rem;
+}
+
+.hint {
+  margin: 0;
+  max-width: 78ch;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  color: var(--copper);
+}
+
+.hint::before {
+  content: "$ ";
+  color: var(--teal);
+}
+
+.hint::after {
+  content: "█";
+  margin-left: 0.2em;
+  color: var(--copper);
+  animation: caret 1.1s steps(1) infinite;
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.run-id {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--paper);
+}
+
+.tick-count {
+  margin: 0.45rem 0 0;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
